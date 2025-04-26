@@ -59,7 +59,7 @@ const User = sequelize.define(
       defaultValue: false,
     },
     phoneNumber: {
-      type: Sequelize.DataTypes.STRING,
+      type: Sequelize.DataTypes.TEXT,
       allowNull: true,
     },
     website: {

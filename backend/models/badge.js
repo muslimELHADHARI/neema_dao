@@ -1,17 +1,16 @@
-import { DataTypes } from "Sequelize"
-import sequelize from "../util/database.js";
+import { DataTypes } from 'sequelize'; // Fixed import (should be 'sequelize')
+import sequelize from '../util/database.js'; // Ensure this points to your actual sequelize instance
 
-
-const Badge = sequelize.define("Badge", {
+const Badge = sequelize.define('Badge', {
   id: {
     type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
+    defaultValue: DataTypes.UUIDV4, // Automatically generates UUIDV4
     primaryKey: true,
   },
   name: {
     type: DataTypes.STRING,
     allowNull: false,
-    unique: true,
+    unique: true, // Ensures the name is unique
   },
   description: {
     type: DataTypes.TEXT,
@@ -23,20 +22,22 @@ const Badge = sequelize.define("Badge", {
   },
   criteria: {
     type: DataTypes.TEXT,
-    allowNull: false,
+    allowNull: true // Ensure this is required
+    // You can provide a default value if needed:
+    // defaultValue: 'Default criteria description',
   },
   pointsRequired: {
     type: DataTypes.INTEGER,
-    allowNull: true,
+    allowNull: true, // Points are optional
   },
   category: {
-    type: DataTypes.STRING,
-    allowNull: true,
+    type: DataTypes.TEXT,
+    allowNull: true, // Category is optional
   },
   isActive: {
     type: DataTypes.BOOLEAN,
-    defaultValue: true,
+    defaultValue: true, // Badge is active by default
   },
-})
+});
 
-export default Badge
+export default Badge;

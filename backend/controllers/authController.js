@@ -4,7 +4,7 @@ import { User } from "../models/index.js"
 // Register a new user
 export const register = async (req, res) => {
   try {
-    const { firstName, lastName, email, password, userType, organization, location } = req.body
+    const { firstName, lastName, email, password, phoneNumber,userType, organization, location } = req.body
 
     // Check if user already exists
     const existingUser = await User.findOne({ where: { email } })
@@ -18,6 +18,7 @@ export const register = async (req, res) => {
       lastName,
       email,
       password,
+      phoneNumber,
       userType,
       organization,
       location,
@@ -48,10 +49,20 @@ export const register = async (req, res) => {
 // Login user
 export const login = async (req, res) => {
   try {
-    const { email, password } = req.body
+    const { email, phoneNumber, password } = req.body
 
-    // Find user by email
-    const user = await User.findOne({ where: { email } })
+    if (!email && !phoneNumber) {
+      return res.status(400).json({ message: "Email or phone number is required" })
+    }
+
+    // Find user by email or phone number
+    let user
+    if (email) {
+      user = await User.findOne({ where: { email } })
+    } else if (phoneNumber) {
+      user = await User.findOne({ where: { phoneNumber } })
+    }
+
     if (!user) {
       return res.status(400).json({ message: "Invalid credentials" })
     }
@@ -81,6 +92,8 @@ export const login = async (req, res) => {
     res.status(500).json({ message: "Server error during login", error: error.message })
   }
 }
+
+
 
 // Forgot password
 export const forgotPassword = async (req, res) => {
