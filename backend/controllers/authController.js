@@ -4,7 +4,7 @@ import { User } from "../models/index.js"
 // Register a new user
 export const register = async (req, res) => {
   try {
-    const { firstName, lastName, email, password, phoneNumber,userType, organization, location } = req.body
+    const { firstName, lastName, email, password, phoneNumber, userType, organization, location, bio, website, businessType, businessLicence, investorType, investmentFocus, university } = req.body
 
     // Check if user already exists
     const existingUser = await User.findOne({ where: { email } })
@@ -13,7 +13,9 @@ export const register = async (req, res) => {
     }
 
     // Create new user
+    console.log("Creating user with data:", req.body)
     const user = await User.create({
+      bio, website, businessType, businessLicence, investorType, investmentFocus, university,
       firstName,
       lastName,
       email,
@@ -150,6 +152,6 @@ export const verifyEmail = async (req, res) => {
     res.json({ message: "Email verified successfully" })
   } catch (error) {
     console.error("Email verification error:", error)
-    res.status(500).json({ message: "Server error", error: error.message })
+    res.status(500).json({ message: "Server error", error: error.message })
   }
 }
