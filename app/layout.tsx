@@ -1,20 +1,24 @@
 import type React from "react"
+import type { Metadata } from "next"
 import { Navbar } from "@/components/navbar"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
 import "@/app/globals.css"
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Neema DAO - Food Waste Reduction Platform",
   description: "A decentralized platform to reduce food waste in Tunisia through innovation and collaboration",
-    generator: 'v0.dev'
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode
+}>) {
   return (
-    <html lang="en">
-      <body>
-        <ThemeProvider attribute="class" defaultTheme="light">
+    <html lang="en" suppressHydrationWarning>
+      <body className="min-h-screen bg-background font-sans antialiased">
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <Navbar />
           <main>{children}</main>
           <Toaster />
