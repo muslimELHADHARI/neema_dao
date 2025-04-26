@@ -29,16 +29,25 @@ export default function LoginPage() {
         const response = await axios.post("http://localhost:5000/api/auth/login", {
           email,
           password,
-        })
-        console.log("Login successful (email):", response.data)
+        });
+
+        console.log("Login successful (email):", response.data);
+
+        // Save token to localStorage
+        localStorage.setItem('token', response.data.token);
+
       } else {
         const response = await axios.post("http://localhost:5000/api/auth/login", {
           phoneNumber,
           password,
-        })
+        });
 
-        console.log("Login successful (phone):", response.data)
+        console.log("Login successful (phone):", response.data);
+
+        // Save token to localStorage
+        localStorage.setItem('token', response.data.token);
       }
+
 
       window.location.href = "/dashboard"
     } catch (error) {

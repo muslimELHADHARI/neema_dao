@@ -80,6 +80,7 @@ export const login = async (req, res) => {
       expiresIn: "1d",
     })
 
+
     // Return user data and token (excluding password)
     const userData = user.toJSON()
     delete userData.password
@@ -89,6 +90,8 @@ export const login = async (req, res) => {
       user: userData,
       token,
     })
+
+
   } catch (error) {
     console.error("Login error:", error)
     res.status(500).json({ message: "Server error during login", error: error.message })
