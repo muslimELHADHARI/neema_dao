@@ -209,7 +209,7 @@ export default function DashboardPage() {
                 </Card>
 
                 <div className="flex justify-center">
-                  <Button className="bg-emerald-600 hover:bg-emerald-700">Submit New Project</Button>
+                   <Link href={"/projects/submit"} > <Button className="bg-emerald-600 hover:bg-emerald-700">Submit New Project</Button> </Link>
                 </div>
               </TabsContent>
 

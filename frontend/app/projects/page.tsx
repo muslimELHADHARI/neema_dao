@@ -120,9 +120,9 @@ export default function ProjectsPage() {
             <h1 className="text-4xl font-bold tracking-tight mb-2">Projects</h1>
             <p className="text-muted-foreground">Discover and support food waste reduction initiatives in Tunisia</p>
           </div>
-          <Button className="bg-emerald-600 hover:bg-emerald-700">
+          <Link href={"/projects/submit"}><Button className="bg-emerald-600 hover:bg-emerald-700">
             <PlusCircle className="mr-2 h-4 w-4" /> Submit Project
-          </Button>
+          </Button></Link>
         </div>
 
         {/* Filters */}

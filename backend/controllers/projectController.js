@@ -85,10 +85,14 @@ export const createProject = async (req, res) => {
       tags,
       timeline,
       team,
+
     } = req.body
 
     // Set inventor ID from authenticated user
+
+
     const inventorId = req.user.id
+
 
     // Create project
     const project = await Project.create({
