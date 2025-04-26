@@ -26,6 +26,22 @@ export default function ProfilePage() {
       setIsEditing(false)
     }, 1000)
   }
+  const [userType] = useState("project-inventor") // This would come from auth context in a real app
+  type User = {
+    id: number;
+    name: string;
+    email: string;
+    phoneNumber: string;
+  };
+
+// Get the user from localStorage
+  const storedUser = localStorage.getItem('user');
+
+  let user: User | null = null;
+
+  if (storedUser) {
+    user = JSON.parse(storedUser) as User;
+  }
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6">
@@ -93,12 +109,12 @@ export default function ProfilePage() {
                   </div>
                   <div className="space-y-2 text-center sm:text-left">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-xl font-semibold">Sarah Ben Ali</h3>
+                      <h3 className="text-xl font-semibold">{user?.firstName +" " + user?.lastName }</h3>
                       <Badge className="bg-emerald-100 text-emerald-800">Project Inventor</Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground">Member since January 2023</p>
+                    <p className="text-sm text-muted-foreground">Member since January {user?.createdAt.slice(0, 4)}</p>
                     <p className="text-sm">
-                      <span className="font-medium">1,250</span> points • <span className="font-medium">7</span> badges
+                      <span className="font-medium">{user?.points}</span> points • <span className="font-medium">7</span> badges
                     </p>
                   </div>
                 </div>
@@ -112,7 +128,7 @@ export default function ProfilePage() {
                       <Label htmlFor="first-name">First Name</Label>
                       <Input
                         id="first-name"
-                        defaultValue="Sarah"
+                        defaultValue={user?.firstName}
                         disabled={!isEditing}
                         className={!isEditing ? "opacity-70" : ""}
                       />
@@ -121,7 +137,7 @@ export default function ProfilePage() {
                       <Label htmlFor="last-name">Last Name</Label>
                       <Input
                         id="last-name"
-                        defaultValue="Ben Ali"
+                        defaultValue={user?.lastName}
                         disabled={!isEditing}
                         className={!isEditing ? "opacity-70" : ""}
                       />
@@ -133,7 +149,7 @@ export default function ProfilePage() {
                     <Input
                       id="email"
                       type="email"
-                      defaultValue="sarah@example.com"
+                      defaultValue={user?.email}
                       disabled={!isEditing}
                       className={!isEditing ? "opacity-70" : ""}
                     />
@@ -150,7 +166,7 @@ export default function ProfilePage() {
                     <Input
                       id="phone"
                       type="tel"
-                      defaultValue="+216 55 123 456"
+                      defaultValue={user?.phoneNumber}
                       disabled={!isEditing}
                       className={!isEditing ? "opacity-70" : ""}
                     />
@@ -170,7 +186,7 @@ export default function ProfilePage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="location">Location</Label>
-                      <Select defaultValue="tunis" disabled={!isEditing}>
+                      <Select defaultValue={user?.location} disabled={!isEditing}>
                         <SelectTrigger id="location" className={!isEditing ? "opacity-70" : ""}>
                           <SelectValue placeholder="Select location" />
                         </SelectTrigger>
