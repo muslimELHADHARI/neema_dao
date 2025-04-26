@@ -1,4 +1,5 @@
-import { sequelize } from "../server.js"
+import sequelize from "../util/database.js";
+
 import User from "./user.js"
 import Project from "./project.js"
 import Inventory from "./inventory.js"

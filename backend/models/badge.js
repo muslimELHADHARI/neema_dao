@@ -1,5 +1,6 @@
-import { DataTypes } from "sequelize"
-import { sequelize } from "../server.js"
+import { DataTypes } from "Sequelize"
+import sequelize from "../util/database.js";
+
 
 const Badge = sequelize.define("Badge", {
   id: {

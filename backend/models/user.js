@@ -1,25 +1,25 @@
-import { DataTypes } from "sequelize"
-import { sequelize } from "../server.js"
+import sequelize from "../util/database.js";
+import {Sequelize} from "sequelize";
 import bcrypt from "bcryptjs"
 
 const User = sequelize.define(
   "User",
   {
     id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
+      type: Sequelize.DataTypes.UUID,
+      defaultValue: Sequelize.DataTypes.UUIDV4,
       primaryKey: true,
     },
     firstName: {
-      type: DataTypes.STRING,
+      type: Sequelize.DataTypes.STRING,
       allowNull: false,
     },
     lastName: {
-      type: DataTypes.STRING,
+      type: Sequelize.DataTypes.STRING,
       allowNull: false,
     },
     email: {
-      type: DataTypes.STRING,
+      type: Sequelize.DataTypes.STRING,
       allowNull: false,
       unique: true,
       validate: {
@@ -27,71 +27,71 @@ const User = sequelize.define(
       },
     },
     password: {
-      type: DataTypes.STRING,
+      type: Sequelize.DataTypes.STRING,
       allowNull: false,
     },
     userType: {
-      type: DataTypes.ENUM("student", "project-inventor", "restaurant-hotel", "investor"),
+      type: Sequelize.DataTypes.ENUM("student", "project-inventor", "restaurant-hotel", "investor"),
       allowNull: false,
     },
     organization: {
-      type: DataTypes.STRING,
+      type: Sequelize.DataTypes.STRING,
       allowNull: true,
     },
     location: {
-      type: DataTypes.STRING,
+      type: Sequelize.DataTypes.STRING,
       allowNull: true,
     },
     bio: {
-      type: DataTypes.TEXT,
+      type: Sequelize.DataTypes.TEXT,
       allowNull: true,
     },
     profileImage: {
-      type: DataTypes.STRING,
+      type: Sequelize.DataTypes.STRING,
       allowNull: true,
     },
     points: {
-      type: DataTypes.INTEGER,
+      type: Sequelize.DataTypes.INTEGER,
       defaultValue: 0,
     },
     isVerified: {
-      type: DataTypes.BOOLEAN,
+      type: Sequelize.DataTypes.BOOLEAN,
       defaultValue: false,
     },
     phoneNumber: {
-      type: DataTypes.STRING,
+      type: Sequelize.DataTypes.STRING,
       allowNull: true,
     },
     website: {
-      type: DataTypes.STRING,
+      type: Sequelize.DataTypes.STRING,
       allowNull: true,
     },
     businessType: {
-      type: DataTypes.STRING,
+      type: Sequelize.DataTypes.STRING,
       allowNull: true,
     },
     businessLicense: {
-      type: DataTypes.STRING,
+      type: Sequelize.DataTypes.STRING,
       allowNull: true,
     },
     investorType: {
-      type: DataTypes.STRING,
+      type: Sequelize.DataTypes.STRING,
       allowNull: true,
     },
     investmentFocus: {
-      type: DataTypes.STRING,
+      type: Sequelize.DataTypes.STRING,
       allowNull: true,
     },
     university: {
-      type: DataTypes.STRING,
+      type: Sequelize.DataTypes.STRING,
       allowNull: true,
     },
     emailNotifications: {
-      type: DataTypes.BOOLEAN,
+      type: Sequelize.DataTypes.BOOLEAN,
       defaultValue: true,
     },
     inAppNotifications: {
-      type: DataTypes.BOOLEAN,
+      type: Sequelize.DataTypes.BOOLEAN,
       defaultValue: true,
     },
   },

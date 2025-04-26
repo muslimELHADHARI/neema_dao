@@ -1,5 +1,6 @@
 import { DataTypes } from "sequelize"
-import { sequelize } from "../server.js"
+import sequelize from "../util/database.js";
+
 
 const WasteLog = sequelize.define("WasteLog", {
   id: {

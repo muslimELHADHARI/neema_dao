@@ -3,6 +3,7 @@ import cors from "cors"
 import dotenv from "dotenv"
 import { Sequelize } from "sequelize"
 import routes from "./routes/index.js"
+import sequelize from "./util/database.js";
 import { syncModels } from "./models/index.js"
 
 // Load environment variables
@@ -11,22 +12,14 @@ dotenv.config()
 // Initialize Express app
 const app = express()
 const PORT = process.env.PORT || 5000
-
+sequelize.sync();
 // Middleware
 app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
 // Database connection
-const sequelize = new Sequelize(process.env.DATABASE_URL, {
-  dialectOptions: {
-    ssl: {
-      require: true,
-      rejectUnauthorized: false,
-    },
-  },
-  logging: false,
-})
+
 
 // Test database connection
 const testDbConnection = async () => {
@@ -65,4 +58,4 @@ app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`)
 })
 
-export { sequelize }
+

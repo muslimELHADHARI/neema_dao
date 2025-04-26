@@ -1,5 +1,5 @@
-import { DataTypes } from "sequelize"
-import { sequelize } from "../server.js"
+import { DataTypes } from "sequelize";
+import sequelize from "../util/database.js";
 
 const Project = sequelize.define("Project", {
   id: {
@@ -27,7 +27,7 @@ const Project = sequelize.define("Project", {
     type: DataTypes.UUID,
     allowNull: false,
     references: {
-      model: "Users",
+      model: "Users", // if you're using User model, make sure it's synced first
       key: "id",
     },
   },
@@ -64,23 +64,23 @@ const Project = sequelize.define("Project", {
     allowNull: true,
   },
   gallery: {
-    type: DataTypes.JSON, // Array of image URLs
+    type: DataTypes.JSON,
     defaultValue: [],
   },
   tags: {
-    type: DataTypes.JSON, // Array of tags
+    type: DataTypes.JSON,
     defaultValue: [],
   },
   timeline: {
-    type: DataTypes.JSON, // Array of timeline events
+    type: DataTypes.JSON,
     defaultValue: [],
   },
   team: {
-    type: DataTypes.JSON, // Array of team members
+    type: DataTypes.JSON,
     defaultValue: [],
   },
   updates: {
-    type: DataTypes.JSON, // Array of project updates
+    type: DataTypes.JSON,
     defaultValue: [],
   },
   startDate: {
@@ -95,6 +95,6 @@ const Project = sequelize.define("Project", {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
   },
-})
+});
 
-export default Project
+export default Project;
