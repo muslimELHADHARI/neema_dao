@@ -1,43 +1,57 @@
 import { WasteLog, User, Inventory } from "../models/index.js"
 import { Op, Sequelize } from "sequelize"
 
-// Get all waste logs
-export const getAllWasteLogs = async (req, res) => {
+// Get all waste logs (with pagination and filters)
+export const getWasteLogs = async (req, res) => {
   try {
-    const wasteLogs = await WasteLog.findAll({
-      where: { reportedById: req.user.id },
+    const { page = 1, limit = 10, startDate, endDate, reason } = req.query
+    const offset = (page - 1) * limit
+    const userId = req.user.id
+
+    // Build where clause for filtering
+    const whereClause = { reportedById: userId }
+
+    // Add date range filter if provided
+    if (startDate || endDate) {
+      whereClause.date = {}
+      if (startDate) whereClause.date[Op.gte] = new Date(startDate)
+      if (endDate) whereClause.date[Op.lte] = new Date(endDate)
+    }
+
+    // Add reason filter if provided
+    if (reason) whereClause.reason = reason
+
+    // Get waste logs with pagination and filters
+    const wasteLogs = await WasteLog.findAndCountAll({
+      where: whereClause,
+      limit: Number.parseInt(limit),
+      offset: Number.parseInt(offset),
       order: [["date", "DESC"]],
-      include: [
-        {
-          model: User,
-          as: "reportedBy",
-          attributes: ["id", "firstName", "lastName"],
-        },
-      ],
     })
 
-    res.json(wasteLogs)
+    res.json({
+      wasteLogs: wasteLogs.rows,
+      totalLogs: wasteLogs.count,
+      totalPages: Math.ceil(wasteLogs.count / limit),
+      currentPage: Number.parseInt(page),
+    })
   } catch (error) {
-    console.error("Error fetching waste logs:", error)
-    res.status(500).json({ message: "Server error while fetching waste logs" })
+    console.error("Get waste logs error:", error)
+    res.status(500).json({ message: "Server error", error: error.message })
   }
 }
 
 // Get waste log by ID
 export const getWasteLogById = async (req, res) => {
   try {
+    const { id } = req.params
+    const userId = req.user.id
+
     const wasteLog = await WasteLog.findOne({
       where: {
-        id: req.params.id,
-        reportedById: req.user.id,
+        id,
+        reportedById: userId,
       },
-      include: [
-        {
-          model: User,
-          as: "reportedBy",
-          attributes: ["id", "firstName", "lastName"],
-        },
-      ],
     })
 
     if (!wasteLog) {
@@ -46,15 +60,16 @@ export const getWasteLogById = async (req, res) => {
 
     res.json(wasteLog)
   } catch (error) {
-    console.error("Error fetching waste log:", error)
-    res.status(500).json({ message: "Server error while fetching waste log" })
+    console.error("Get waste log by ID error:", error)
+    res.status(500).json({ message: "Server error", error: error.message })
   }
 }
 
 // Create waste log
 export const createWasteLog = async (req, res) => {
   try {
-    const { item, quantity, unit, reason, date, cost } = req.body
+    const { item, quantity, unit, reason, date, cost, notes, inventoryId } = req.body
+    const userId = req.user.id
 
     // Create waste log
     const wasteLog = await WasteLog.create({
@@ -64,51 +79,56 @@ export const createWasteLog = async (req, res) => {
       reason,
       date: date || new Date(),
       cost,
-      reportedById: req.user.id,
+      notes,
+      inventoryId,
+      reportedById: userId,
+      userId,
     })
 
-    // If the item is in inventory, update or remove it
-    const inventoryItem = await Inventory.findOne({
-      where: {
-        userId: req.user.id,
-        name: item,
-      },
-    })
+    // If inventoryId is provided, update or remove the inventory item
+    if (inventoryId) {
+      const inventoryItem = await Inventory.findByPk(inventoryId)
 
-    if (inventoryItem) {
-      if (inventoryItem.quantity > quantity) {
-        await inventoryItem.update({
-          quantity: inventoryItem.quantity - quantity,
-        })
-      } else {
-        await inventoryItem.destroy()
+      if (inventoryItem && inventoryItem.userId === userId) {
+        if (inventoryItem.quantity > quantity) {
+          await inventoryItem.update({
+            quantity: inventoryItem.quantity - quantity,
+            lastUpdated: new Date(),
+          })
+        } else {
+          await inventoryItem.destroy()
+        }
       }
     }
 
-    // Award points for logging waste (encouraging transparency)
-    await User.increment("points", {
-      by: 2,
-      where: { id: req.user.id },
-    })
+    // Add points to user for logging waste (2 points)
+    const user = await User.findByPk(userId)
+    if (user) {
+      await user.update({ points: user.points + 2 })
+    }
 
     res.status(201).json({
       message: "Waste log created successfully",
       wasteLog,
     })
   } catch (error) {
-    console.error("Error creating waste log:", error)
-    res.status(500).json({ message: "Server error while creating waste log" })
+    console.error("Create waste log error:", error)
+    res.status(500).json({ message: "Server error", error: error.message })
   }
 }
 
 // Update waste log
 export const updateWasteLog = async (req, res) => {
   try {
-    // Check if waste log exists
+    const { id } = req.params
+    const { item, quantity, unit, reason, date, cost, notes } = req.body
+    const userId = req.user.id
+
+    // Find waste log
     const wasteLog = await WasteLog.findOne({
       where: {
-        id: req.params.id,
-        reportedById: req.user.id,
+        id,
+        reportedById: userId,
       },
     })
 
@@ -117,26 +137,37 @@ export const updateWasteLog = async (req, res) => {
     }
 
     // Update waste log
-    const updatedWasteLog = await wasteLog.update(req.body)
+    await wasteLog.update({
+      item,
+      quantity,
+      unit,
+      reason,
+      date,
+      cost,
+      notes,
+    })
 
     res.json({
       message: "Waste log updated successfully",
-      wasteLog: updatedWasteLog,
+      wasteLog,
     })
   } catch (error) {
-    console.error("Error updating waste log:", error)
-    res.status(500).json({ message: "Server error while updating waste log" })
+    console.error("Update waste log error:", error)
+    res.status(500).json({ message: "Server error", error: error.message })
   }
 }
 
 // Delete waste log
 export const deleteWasteLog = async (req, res) => {
   try {
-    // Check if waste log exists
+    const { id } = req.params
+    const userId = req.user.id
+
+    // Find waste log
     const wasteLog = await WasteLog.findOne({
       where: {
-        id: req.params.id,
-        reportedById: req.user.id,
+        id,
+        reportedById: userId,
       },
     })
 
@@ -149,51 +180,88 @@ export const deleteWasteLog = async (req, res) => {
 
     res.json({ message: "Waste log deleted successfully" })
   } catch (error) {
-    console.error("Error deleting waste log:", error)
-    res.status(500).json({ message: "Server error while deleting waste log" })
+    console.error("Delete waste log error:", error)
+    res.status(500).json({ message: "Server error", error: error.message })
+  }
+}
+
+// Get waste logs by user
+export const getWasteLogsByUser = async (req, res) => {
+  try {
+    const { userId } = req.params
+    const { page = 1, limit = 10, startDate, endDate } = req.query
+    const offset = (page - 1) * limit
+
+    // Check if requesting user is the same as the target user or is an admin
+    if (req.user.id !== userId && req.user.userType !== "admin") {
+      return res.status(403).json({ message: "Not authorized to view these waste logs" })
+    }
+
+    // Build where clause for filtering
+    const whereClause = { reportedById: userId }
+
+    // Add date range filter if provided
+    if (startDate || endDate) {
+      whereClause.date = {}
+      if (startDate) whereClause.date[Op.gte] = new Date(startDate)
+      if (endDate) whereClause.date[Op.lte] = new Date(endDate)
+    }
+
+    // Get waste logs with pagination and filters
+    const wasteLogs = await WasteLog.findAndCountAll({
+      where: whereClause,
+      limit: Number.parseInt(limit),
+      offset: Number.parseInt(offset),
+      order: [["date", "DESC"]],
+    })
+
+    res.json({
+      wasteLogs: wasteLogs.rows,
+      totalLogs: wasteLogs.count,
+      totalPages: Math.ceil(wasteLogs.count / limit),
+      currentPage: Number.parseInt(page),
+    })
+  } catch (error) {
+    console.error("Get waste logs by user error:", error)
+    res.status(500).json({ message: "Server error", error: error.message })
   }
 }
 
 // Get waste analytics
 export const getWasteAnalytics = async (req, res) => {
   try {
+    const { userId } = req.params
     const { startDate, endDate } = req.query
 
-    // Build date range condition
-    const dateCondition = {}
-    if (startDate && endDate) {
-      dateCondition.date = {
-        [Op.between]: [new Date(startDate), new Date(endDate)],
-      }
-    } else if (startDate) {
-      dateCondition.date = {
-        [Op.gte]: new Date(startDate),
-      }
-    } else if (endDate) {
-      dateCondition.date = {
-        [Op.lte]: new Date(endDate),
-      }
+    // Check if requesting user is the same as the target user or is an admin
+    if (req.user.id !== userId && req.user.userType !== "admin") {
+      return res.status(403).json({ message: "Not authorized to view these analytics" })
+    }
+
+    // Build where clause for filtering
+    const whereClause = { reportedById: userId }
+
+    // Add date range filter if provided
+    if (startDate || endDate) {
+      whereClause.date = {}
+      if (startDate) whereClause.date[Op.gte] = new Date(startDate)
+      if (endDate) whereClause.date[Op.lte] = new Date(endDate)
     }
 
     // Get total waste cost
     const totalWasteCost = await WasteLog.sum("cost", {
-      where: {
-        reportedById: req.user.id,
-        ...dateCondition,
-      },
+      where: whereClause,
     })
 
-    // Get waste by category (using item name to infer category)
-    const wasteByCategory = await WasteLog.findAll({
+    // Get waste by item
+    const wasteByItem = await WasteLog.findAll({
       attributes: [
         "item",
         [Sequelize.fn("SUM", Sequelize.col("cost")), "totalCost"],
         [Sequelize.fn("SUM", Sequelize.col("quantity")), "totalQuantity"],
+        [Sequelize.fn("COUNT", Sequelize.col("id")), "count"],
       ],
-      where: {
-        reportedById: req.user.id,
-        ...dateCondition,
-      },
+      where: whereClause,
       group: ["item"],
       order: [[Sequelize.fn("SUM", Sequelize.col("cost")), "DESC"]],
     })
@@ -205,10 +273,7 @@ export const getWasteAnalytics = async (req, res) => {
         [Sequelize.fn("SUM", Sequelize.col("cost")), "totalCost"],
         [Sequelize.fn("COUNT", Sequelize.col("id")), "count"],
       ],
-      where: {
-        reportedById: req.user.id,
-        ...dateCondition,
-      },
+      where: whereClause,
       group: ["reason"],
       order: [[Sequelize.fn("SUM", Sequelize.col("cost")), "DESC"]],
     })
@@ -216,27 +281,28 @@ export const getWasteAnalytics = async (req, res) => {
     // Get waste trend (monthly)
     const wasteTrend = await WasteLog.findAll({
       attributes: [
-        [Sequelize.fn("DATE_TRUNC", "month", Sequelize.col("date")), "month"],
+        [Sequelize.fn("date_trunc", "month", Sequelize.col("date")), "month"],
         [Sequelize.fn("SUM", Sequelize.col("cost")), "totalCost"],
+        [Sequelize.fn("COUNT", Sequelize.col("id")), "count"],
       ],
       where: {
-        reportedById: req.user.id,
+        reportedById: userId,
         date: {
           [Op.gte]: Sequelize.literal("NOW() - INTERVAL '6 months'"),
         },
       },
-      group: [Sequelize.fn("DATE_TRUNC", "month", Sequelize.col("date"))],
-      order: [Sequelize.fn("DATE_TRUNC", "month", Sequelize.col("date"))],
+      group: [Sequelize.fn("date_trunc", "month", Sequelize.col("date"))],
+      order: [[Sequelize.fn("date_trunc", "month", Sequelize.col("date")), "ASC"]],
     })
 
     res.json({
       totalWasteCost: totalWasteCost || 0,
-      wasteByCategory,
+      wasteByItem,
       wasteByReason,
       wasteTrend,
     })
   } catch (error) {
-    console.error("Error fetching waste analytics:", error)
-    res.status(500).json({ message: "Server error while fetching waste analytics" })
+    console.error("Get waste analytics error:", error)
+    res.status(500).json({ message: "Server error", error: error.message })
   }
 }

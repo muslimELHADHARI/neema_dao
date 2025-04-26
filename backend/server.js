@@ -3,6 +3,7 @@ import cors from "cors"
 import dotenv from "dotenv"
 import { Sequelize } from "sequelize"
 import routes from "./routes/index.js"
+import { syncModels } from "./models/index.js"
 
 // Load environment variables
 dotenv.config()
@@ -32,6 +33,9 @@ const testDbConnection = async () => {
   try {
     await sequelize.authenticate()
     console.log("Database connection has been established successfully.")
+
+    // Sync models with database
+    await syncModels()
   } catch (error) {
     console.error("Unable to connect to the database:", error)
   }
@@ -45,6 +49,15 @@ app.use("/api", routes)
 // Root route
 app.get("/", (req, res) => {
   res.send("Neema DAO API is running")
+})
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack)
+  res.status(500).json({
+    message: "An unexpected error occurred",
+    error: process.env.NODE_ENV === "development" ? err.message : undefined,
+  })
 })
 
 // Start server

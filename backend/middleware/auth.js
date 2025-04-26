@@ -33,3 +33,27 @@ export const authenticate = async (req, res, next) => {
     res.status(401).json({ message: "Invalid token, access denied" })
   }
 }
+
+// Middleware to check if user is admin
+export const isAdmin = (req, res, next) => {
+  if (req.user.userType !== "admin") {
+    return res.status(403).json({ message: "Access denied. Admin privileges required." })
+  }
+  next()
+}
+
+// Middleware to validate request data
+export const validateRequest = (schema) => {
+  return (req, res, next) => {
+    try {
+      const { error } = schema.validate(req.body)
+      if (error) {
+        return res.status(400).json({ message: error.details[0].message })
+      }
+      next()
+    } catch (error) {
+      console.error("Validation error:", error)
+      res.status(500).json({ message: "Server error during validation" })
+    }
+  }
+}

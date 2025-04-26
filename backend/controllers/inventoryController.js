@@ -1,36 +1,49 @@
-import { Inventory } from "../models/index.js"
+import { Inventory, User } from "../models/index.js"
 import { Op } from "sequelize"
 
-// Get all inventory items
-export const getAllInventory = async (req, res) => {
+// Get all inventory items (with pagination and filters)
+export const getInventoryItems = async (req, res) => {
   try {
-    const { category, status, location } = req.query
+    const { page = 1, limit = 10, category, status, location } = req.query
+    const offset = (page - 1) * limit
+    const userId = req.user.id
 
-    // Build query conditions
-    const whereConditions = { userId: req.user.id }
-    if (category) whereConditions.category = category
-    if (status) whereConditions.status = status
-    if (location) whereConditions.location = location
+    // Build where clause for filtering
+    const whereClause = { userId }
+    if (category) whereClause.category = category
+    if (status) whereClause.status = status
+    if (location) whereClause.location = location
 
-    const inventory = await Inventory.findAll({
-      where: whereConditions,
+    // Get inventory items with pagination and filters
+    const inventory = await Inventory.findAndCountAll({
+      where: whereClause,
+      limit: Number.parseInt(limit),
+      offset: Number.parseInt(offset),
       order: [["expiryDate", "ASC"]],
     })
 
-    res.json(inventory)
+    res.json({
+      inventory: inventory.rows,
+      totalItems: inventory.count,
+      totalPages: Math.ceil(inventory.count / limit),
+      currentPage: Number.parseInt(page),
+    })
   } catch (error) {
-    console.error("Error fetching inventory:", error)
-    res.status(500).json({ message: "Server error while fetching inventory" })
+    console.error("Get inventory items error:", error)
+    res.status(500).json({ message: "Server error", error: error.message })
   }
 }
 
 // Get inventory item by ID
-export const getInventoryById = async (req, res) => {
+export const getInventoryItemById = async (req, res) => {
   try {
+    const { id } = req.params
+    const userId = req.user.id
+
     const inventoryItem = await Inventory.findOne({
       where: {
-        id: req.params.id,
-        userId: req.user.id,
+        id,
+        userId,
       },
     })
 
@@ -40,15 +53,16 @@ export const getInventoryById = async (req, res) => {
 
     res.json(inventoryItem)
   } catch (error) {
-    console.error("Error fetching inventory item:", error)
-    res.status(500).json({ message: "Server error while fetching inventory item" })
+    console.error("Get inventory item by ID error:", error)
+    res.status(500).json({ message: "Server error", error: error.message })
   }
 }
 
 // Create inventory item
 export const createInventoryItem = async (req, res) => {
   try {
-    const { name, category, quantity, unit, expiryDate, location } = req.body
+    const { name, category, quantity, unit, expiryDate, location, notes, costPerUnit } = req.body
+    const userId = req.user.id
 
     // Calculate status based on expiry date
     const today = new Date()
@@ -73,30 +87,42 @@ export const createInventoryItem = async (req, res) => {
       quantity,
       unit,
       expiryDate,
+      location,
+      notes,
+      costPerUnit,
       status,
       wastePotential,
-      location,
-      userId: req.user.id,
+      userId,
     })
+
+    // Add points to user for tracking inventory (5 points)
+    const user = await User.findByPk(userId)
+    if (user) {
+      await user.update({ points: user.points + 5 })
+    }
 
     res.status(201).json({
       message: "Inventory item created successfully",
       inventoryItem,
     })
   } catch (error) {
-    console.error("Error creating inventory item:", error)
-    res.status(500).json({ message: "Server error while creating inventory item" })
+    console.error("Create inventory item error:", error)
+    res.status(500).json({ message: "Server error", error: error.message })
   }
 }
 
 // Update inventory item
 export const updateInventoryItem = async (req, res) => {
   try {
-    // Check if inventory item exists
+    const { id } = req.params
+    const { name, category, quantity, unit, expiryDate, location, notes, costPerUnit } = req.body
+    const userId = req.user.id
+
+    // Find inventory item
     const inventoryItem = await Inventory.findOne({
       where: {
-        id: req.params.id,
-        userId: req.user.id,
+        id,
+        userId,
       },
     })
 
@@ -104,17 +130,14 @@ export const updateInventoryItem = async (req, res) => {
       return res.status(404).json({ message: "Inventory item not found" })
     }
 
-    // Update inventory item
-    const updatedItem = await inventoryItem.update(req.body)
+    // Calculate status based on expiry date
+    let status = inventoryItem.status
+    let wastePotential = inventoryItem.wastePotential
 
-    // Recalculate status if expiry date was updated
-    if (req.body.expiryDate) {
+    if (expiryDate) {
       const today = new Date()
-      const expiry = new Date(req.body.expiryDate)
+      const expiry = new Date(expiryDate)
       const daysUntilExpiry = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24))
-
-      let status = "good"
-      let wastePotential = "low"
 
       if (daysUntilExpiry <= 2) {
         status = "critical"
@@ -122,29 +145,48 @@ export const updateInventoryItem = async (req, res) => {
       } else if (daysUntilExpiry <= 5) {
         status = "warning"
         wastePotential = "medium"
+      } else {
+        status = "good"
+        wastePotential = "low"
       }
-
-      await updatedItem.update({ status, wastePotential })
     }
+
+    // Update inventory item
+    await inventoryItem.update({
+      name,
+      category,
+      quantity,
+      unit,
+      expiryDate,
+      location,
+      notes,
+      costPerUnit,
+      status,
+      wastePotential,
+      lastUpdated: new Date(),
+    })
 
     res.json({
       message: "Inventory item updated successfully",
-      inventoryItem: updatedItem,
+      inventoryItem,
     })
   } catch (error) {
-    console.error("Error updating inventory item:", error)
-    res.status(500).json({ message: "Server error while updating inventory item" })
+    console.error("Update inventory item error:", error)
+    res.status(500).json({ message: "Server error", error: error.message })
   }
 }
 
 // Delete inventory item
 export const deleteInventoryItem = async (req, res) => {
   try {
-    // Check if inventory item exists
+    const { id } = req.params
+    const userId = req.user.id
+
+    // Find inventory item
     const inventoryItem = await Inventory.findOne({
       where: {
-        id: req.params.id,
-        userId: req.user.id,
+        id,
+        userId,
       },
     })
 
@@ -157,18 +199,62 @@ export const deleteInventoryItem = async (req, res) => {
 
     res.json({ message: "Inventory item deleted successfully" })
   } catch (error) {
-    console.error("Error deleting inventory item:", error)
-    res.status(500).json({ message: "Server error while deleting inventory item" })
+    console.error("Delete inventory item error:", error)
+    res.status(500).json({ message: "Server error", error: error.message })
+  }
+}
+
+// Get inventory by user
+export const getInventoryByUser = async (req, res) => {
+  try {
+    const { userId } = req.params
+    const { page = 1, limit = 10, category, status } = req.query
+    const offset = (page - 1) * limit
+
+    // Check if requesting user is the same as the target user or is an admin
+    if (req.user.id !== userId && req.user.userType !== "admin") {
+      return res.status(403).json({ message: "Not authorized to view this inventory" })
+    }
+
+    // Build where clause for filtering
+    const whereClause = { userId }
+    if (category) whereClause.category = category
+    if (status) whereClause.status = status
+
+    // Get inventory items with pagination and filters
+    const inventory = await Inventory.findAndCountAll({
+      where: whereClause,
+      limit: Number.parseInt(limit),
+      offset: Number.parseInt(offset),
+      order: [["expiryDate", "ASC"]],
+    })
+
+    res.json({
+      inventory: inventory.rows,
+      totalItems: inventory.count,
+      totalPages: Math.ceil(inventory.count / limit),
+      currentPage: Number.parseInt(page),
+    })
+  } catch (error) {
+    console.error("Get inventory by user error:", error)
+    res.status(500).json({ message: "Server error", error: error.message })
   }
 }
 
 // Get inventory suggestions
 export const getInventorySuggestions = async (req, res) => {
   try {
+    const { userId } = req.params
+
+    // Check if requesting user is the same as the target user or is an admin
+    if (req.user.id !== userId && req.user.userType !== "admin") {
+      return res.status(403).json({ message: "Not authorized to view these suggestions" })
+    }
+
     // Find items that are expiring soon
     const expiringItems = await Inventory.findAll({
       where: {
-        userId: req.user.id,
+        userId,
         status: {
           [Op.in]: ["warning", "critical"],
         },
@@ -178,47 +264,53 @@ export const getInventorySuggestions = async (req, res) => {
 
     // Generate suggestions based on expiring items
     const suggestions = expiringItems.map((item) => {
-      let suggestion = {}
+      const daysUntilExpiry = Math.ceil((new Date(item.expiryDate) - new Date()) / (1000 * 60 * 60 * 24))
+      const cost = item.costPerUnit ? item.quantity * item.costPerUnit : item.quantity * 2 // Default cost estimate
+
+      let suggestion = {
+        id: `suggestion-${item.id}`,
+        itemId: item.id,
+        itemName: item.name,
+        daysUntilExpiry,
+        quantity: item.quantity,
+        unit: item.unit,
+        potentialSavings: cost.toFixed(2),
+      }
 
       if (item.category === "Bakery") {
         suggestion = {
-          id: `suggestion-${item.id}`,
+          ...suggestion,
           title: `Use expiring ${item.name.toLowerCase()} for alternative recipes`,
-          description: `${item.quantity} ${item.unit} of ${item.name.toLowerCase()} will expire in ${Math.ceil((new Date(item.expiryDate) - new Date()) / (1000 * 60 * 60 * 24))} days. Consider making croutons, bread pudding, or breadcrumbs.`,
-          impact: `Potential savings: ${(item.quantity * 1.5).toFixed(1)} TND`,
-          type: "recipe",
+          description: `${item.quantity} ${item.unit} of ${item.name.toLowerCase()} will expire in ${daysUntilExpiry} days. Consider making croutons, bread pudding, or breadcrumbs.`,
+          actionType: "recipe",
         }
       } else if (item.category === "Dairy") {
         suggestion = {
-          id: `suggestion-${item.id}`,
+          ...suggestion,
           title: `Use expiring ${item.name.toLowerCase()} in cooking`,
-          description: `${item.quantity} ${item.unit} of ${item.name.toLowerCase()} will expire in ${Math.ceil((new Date(item.expiryDate) - new Date()) / (1000 * 60 * 60 * 24))} days. Consider using it in sauces, soups, or baked goods.`,
-          impact: `Potential savings: ${(item.quantity * 1.8).toFixed(1)} TND`,
-          type: "recipe",
+          description: `${item.quantity} ${item.unit} of ${item.name.toLowerCase()} will expire in ${daysUntilExpiry} days. Consider using it in sauces, soups, or baked goods.`,
+          actionType: "recipe",
         }
       } else if (item.category === "Vegetables") {
         suggestion = {
-          id: `suggestion-${item.id}`,
+          ...suggestion,
           title: `Process ${item.name.toLowerCase()} for longer storage`,
-          description: `${item.quantity} ${item.unit} of ${item.name.toLowerCase()} will expire in ${Math.ceil((new Date(item.expiryDate) - new Date()) / (1000 * 60 * 60 * 24))} days. Consider freezing, pickling, or making soup.`,
-          impact: `Potential savings: ${(item.quantity * 3).toFixed(1)} TND`,
-          type: "recipe",
+          description: `${item.quantity} ${item.unit} of ${item.name.toLowerCase()} will expire in ${daysUntilExpiry} days. Consider freezing, pickling, or making soup.`,
+          actionType: "preserve",
         }
       } else if (item.category === "Meat") {
         suggestion = {
-          id: `suggestion-${item.id}`,
+          ...suggestion,
           title: `Cook and freeze ${item.name.toLowerCase()}`,
-          description: `${item.quantity} ${item.unit} of ${item.name.toLowerCase()} will expire in ${Math.ceil((new Date(item.expiryDate) - new Date()) / (1000 * 60 * 60 * 24))} days. Consider cooking and freezing portions.`,
-          impact: `Potential savings: ${(item.quantity * 12).toFixed(1)} TND`,
-          type: "recipe",
+          description: `${item.quantity} ${item.unit} of ${item.name.toLowerCase()} will expire in ${daysUntilExpiry} days. Consider cooking and freezing portions.`,
+          actionType: "cook",
         }
       } else {
         suggestion = {
-          id: `suggestion-${item.id}`,
+          ...suggestion,
           title: `Use ${item.name.toLowerCase()} soon`,
-          description: `${item.quantity} ${item.unit} of ${item.name.toLowerCase()} will expire in ${Math.ceil((new Date(item.expiryDate) - new Date()) / (1000 * 60 * 60 * 24))} days.`,
-          impact: `Potential savings: ${(item.quantity * 2).toFixed(1)} TND`,
-          type: "recipe",
+          description: `${item.quantity} ${item.unit} of ${item.name.toLowerCase()} will expire in ${daysUntilExpiry} days.`,
+          actionType: "use",
         }
       }
 
@@ -227,7 +319,7 @@ export const getInventorySuggestions = async (req, res) => {
 
     res.json(suggestions)
   } catch (error) {
-    console.error("Error generating inventory suggestions:", error)
-    res.status(500).json({ message: "Server error while generating inventory suggestions" })
+    console.error("Get inventory suggestions error:", error)
+    res.status(500).json({ message: "Server error", error: error.message })
   }
 }
