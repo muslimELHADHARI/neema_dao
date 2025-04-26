@@ -23,6 +23,21 @@ export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(true) // For demo purposes
 
+  type User = {
+    id: number;
+    name: string;
+    email: string;
+    phoneNumber: string;
+  };
+
+// Get the user from localStorage
+  const storedUser = localStorage.getItem('user');
+
+  let user: User | null = null;
+
+  if (storedUser) {
+    user = JSON.parse(storedUser) as User;
+  }
   // Check if user is scrolled down
   useEffect(() => {
     const handleScroll = () => {
@@ -147,15 +162,15 @@ export function Navbar() {
                       <AvatarImage src="/placeholder.svg?height=32&width=32" alt="User" />
                       <AvatarFallback>SA</AvatarFallback>
                     </Avatar>
-                    <span className="hidden md:inline-flex text-sm font-medium">Sarah</span>
+                    <span className="hidden md:inline-flex text-sm font-medium">{user?.firstName  }</span>
                     <ChevronDown className="h-4 w-4 opacity-50" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel>
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium">Sarah Ben Ali</p>
-                      <p className="text-xs text-muted-foreground">sarah@example.com</p>
+                      <p className="text-sm font-medium">{user?.firstName +" " + user?.lastName }</p>
+                      <p className="text-xs text-muted-foreground">{user?.email}</p>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />

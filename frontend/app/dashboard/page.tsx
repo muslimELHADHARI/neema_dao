@@ -73,7 +73,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Points</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">user?.points</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">1,250</div>
