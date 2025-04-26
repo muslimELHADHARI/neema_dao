@@ -18,7 +18,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [phoneNumber, setPhone] = useState("")
   const [password, setPassword] = useState("")
-  const [activeTab, setActiveTab] = useState("") // track whether email or phone login is selected
+  const [activeTab, setActiveTab] = useState("email") // track whether email or phone login is selected
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
