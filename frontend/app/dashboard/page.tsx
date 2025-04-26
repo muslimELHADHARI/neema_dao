@@ -24,6 +24,21 @@ import Link from "next/link"
 
 export default function DashboardPage() {
   const [userType] = useState("project-inventor") // This would come from auth context in a real app
+  type User = {
+    id: number;
+    name: string;
+    email: string;
+    phoneNumber: string;
+  };
+
+// Get the user from localStorage
+  const storedUser = localStorage.getItem('user');
+
+  let user: User | null = null;
+
+  if (storedUser) {
+    user = JSON.parse(storedUser) as User;
+  }
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6">
@@ -37,7 +52,7 @@ export default function DashboardPage() {
             </Avatar>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold tracking-tight">Sarah Ben Ali</h1>
+                <h1 className="text-2xl font-bold tracking-tight">{user?.firstName +" " + user?.lastName }</h1>
                 <Badge className="bg-emerald-100 text-emerald-800">Project Inventor</Badge>
               </div>
               <p className="text-muted-foreground">Member since January 2023</p>

@@ -35,6 +35,7 @@ export default function LoginPage() {
 
         // Save token to localStorage
         localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
 
       } else {
         const response = await axios.post("http://localhost:5000/api/auth/login", {
@@ -46,6 +47,7 @@ export default function LoginPage() {
 
         // Save token to localStorage
         localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
       }
 
 
