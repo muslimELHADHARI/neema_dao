@@ -10,6 +10,7 @@ import { Progress } from "@/components/ui/progress"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import {
+  AlertCircle,
   ArrowLeft,
   Calendar,
   Clock,
@@ -20,7 +21,6 @@ import {
   MapPin,
   MessageSquare,
   Share2,
-  ThumbsUp,
   Users,
   Wallet,
   AlertTriangle,
@@ -30,6 +30,8 @@ import Image from "next/image"
 import { useEffect, useState } from "react"
 import { useToast } from "@/components/ui/use-toast"
 import { FundProjectModal } from "@/components/fund-project-modal"
+import { VoteButton } from "@/components/vote-button"
+import { TokenPurchaseModal } from "@/components/token-purchase-modal"
 
 // Define interfaces for the API response
 interface Inventor {
@@ -113,6 +115,12 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
   // Add state for the funding modal
   const [fundingModalOpen, setFundingModalOpen] = useState(false)
 
+  // Add state for the token purchase modal
+  const [tokenModalOpen, setTokenModalOpen] = useState(false)
+
+  // Add state for user tokens (in a real app, this would come from auth context)
+  const [userTokens, setUserTokens] = useState(0)
+
   // Add a function to handle successful funding
   const handleFundingComplete = (amount: number) => {
     // Update the project data with the new funding amount
@@ -124,6 +132,26 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
         backers: prev.backers + 1,
       }
     })
+  }
+
+  // Add a function to handle successful voting
+  const handleVoteComplete = () => {
+    // Update the project data with the new vote count
+    setProject((prev) => {
+      if (!prev) return null
+      return {
+        ...prev,
+        votes: prev.votes + 1,
+      }
+    })
+
+    // Decrease user tokens
+    setUserTokens((prev) => Math.max(0, prev - 1))
+  }
+
+  // Add a function to handle token purchase
+  const handleTokenPurchase = (amount: number) => {
+    setUserTokens((prev) => prev + amount)
   }
 
   useEffect(() => {
@@ -271,6 +299,9 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
   const projectUpdates = parseUpdates(project.updates)
   const daysLeft = calculateDaysLeft(project.endDate)
 
+  // Check if project has enough votes for funding
+  const canFund = project.votes >= 100
+
   return (
     <div className="container mx-auto py-8 px-4 md:px-6">
       <div className="max-w-7xl mx-auto">
@@ -315,9 +346,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
               <Button variant="outline" size="sm">
                 <Heart className="h-4 w-4 mr-2" /> Save
               </Button>
-              <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" size="sm">
-                <ThumbsUp className="h-4 w-4 mr-2" /> Vote
-              </Button>
+              <VoteButton projectId={project.id} onVoteComplete={handleVoteComplete} userTokens={userTokens} />
             </div>
           </div>
 
@@ -564,46 +593,70 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
           {/* Right Column - Funding and Inventor */}
           <div className="space-y-6">
             {/* Funding Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Project Funding</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="font-medium">Progress</span>
-                    <span>{fundingPercentage}%</span>
+            {canFund ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Project Funding</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="font-medium">Progress</span>
+                      <span>{fundingPercentage}%</span>
+                    </div>
+                    <Progress value={fundingPercentage} className="h-2" />
+                    <div className="flex justify-between text-sm text-muted-foreground mt-1">
+                      <span>{project.fundingRaised} TND raised</span>
+                      <span>Goal: {project.fundingGoal} TND</span>
+                    </div>
                   </div>
-                  <Progress value={fundingPercentage} className="h-2" />
-                  <div className="flex justify-between text-sm text-muted-foreground mt-1">
-                    <span>{project.fundingRaised} TND raised</span>
-                    <span>Goal: {project.fundingGoal} TND</span>
+
+                  <div className="flex items-center justify-between py-2 border-b dark:border-gray-700">
+                    <span className="text-sm">Backers</span>
+                    <span className="font-medium">{project.backers}</span>
                   </div>
-                </div>
 
-                <div className="flex items-center justify-between py-2 border-b dark:border-gray-700">
-                  <span className="text-sm">Backers</span>
-                  <span className="font-medium">{project.backers}</span>
-                </div>
+                  <div className="flex items-center justify-between py-2 border-b dark:border-gray-700">
+                    <span className="text-sm">Votes</span>
+                    <span className="font-medium">{project.votes}</span>
+                  </div>
 
-                <div className="flex items-center justify-between py-2 border-b dark:border-gray-700">
-                  <span className="text-sm">Votes</span>
-                  <span className="font-medium">{project.votes}</span>
-                </div>
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-sm">Days Left</span>
+                    <span className="font-medium">{daysLeft > 0 ? daysLeft : "N/A"}</span>
+                  </div>
 
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-sm">Days Left</span>
-                  <span className="font-medium">{daysLeft > 0 ? daysLeft : "N/A"}</span>
-                </div>
-
-                <Button
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
-                  onClick={() => setFundingModalOpen(true)}
-                >
-                  <Wallet className="h-4 w-4 mr-2" /> Fund This Project
-                </Button>
-              </CardContent>
-            </Card>
+                  <Button
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+                    onClick={() => setFundingModalOpen(true)}
+                  >
+                    <Wallet className="h-4 w-4 mr-2" /> Fund This Project
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Project Funding</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-4">
+                    <AlertCircle className="h-10 w-10 text-amber-500 mx-auto mb-2" />
+                    <h3 className="text-lg font-medium mb-2">Funding Not Available Yet</h3>
+                    <p className="text-muted-foreground mb-4">
+                      This project needs at least 100 votes before funding can begin. Current votes: {project.votes}/100
+                    </p>
+                    <Progress value={(project.votes / 100) * 100} className="h-2 mb-4" />
+                    <div className="flex flex-col gap-2">
+                      <Button variant="outline" onClick={() => setTokenModalOpen(true)}>
+                        Purchase Tokens to Vote
+                      </Button>
+                      <div className="text-xs text-muted-foreground mt-2">1 token = $1 = 1 vote</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Inventor Card */}
             <Card>
@@ -701,6 +754,13 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
           onFundingComplete={handleFundingComplete}
         />
       )}
+
+      {/* Token Purchase Modal */}
+      <TokenPurchaseModal
+        open={tokenModalOpen}
+        onOpenChange={setTokenModalOpen}
+        onPurchaseComplete={handleTokenPurchase}
+      />
     </div>
   )
 }

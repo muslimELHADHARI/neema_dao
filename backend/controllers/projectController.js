@@ -268,7 +268,7 @@ export const fundProject = async (req, res) => {
 
     // Update project status if fully funded
     let newStatus = project.status
-    if (newFundingRaised >= project.fundingGoal && project.status === "draft") {
+    if (newFundingRaised >= project.fundingGoal && project.status === "active") {
       newStatus = "funded"
     }
 

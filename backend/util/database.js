@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const sequelize = new Sequelize('neema', 'root', 'ahmedahmed', {
+const sequelize = new Sequelize('neema', 'root', '123456789/*-', {
     host: 'localhost',
     dialect: 'mysql',
     port: 3306,
