@@ -1,8 +1,7 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
     Dialog,
@@ -18,15 +17,31 @@ import { Loader2, CreditCard } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 
 interface TokenPurchaseModalProps {
+    projectId: string
     open: boolean
     onOpenChange: (open: boolean) => void
     onPurchaseComplete: (amount: number) => void
 }
 
-export function TokenPurchaseModal({ open, onOpenChange, onPurchaseComplete }: TokenPurchaseModalProps) {
+type User = {
+    id: number;
+    name: string;
+    email: string;
+    phoneNumber: string;
+};
+
+export function TokenPurchaseModal({ projectId, open, onOpenChange, onPurchaseComplete }: TokenPurchaseModalProps) {
     const [amount, setAmount] = useState("1")
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [user, setUser] = useState<User | null>(null)
     const { toast } = useToast()
+
+    useEffect(() => {
+        const storedUser = localStorage.getItem('user')
+        if (storedUser) {
+            setUser(JSON.parse(storedUser) as User)
+        }
+    }, [])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -40,26 +55,47 @@ export function TokenPurchaseModal({ open, onOpenChange, onPurchaseComplete }: T
             return
         }
 
+        if (!user) {
+            toast({
+                title: "User not found",
+                description: "Please log in before voting.",
+                variant: "destructive",
+            })
+            return
+        }
+
         try {
             setIsSubmitting(true)
+            console.log("Submitting vote for project:", projectId, "with amount:", amount, "by user:", user.id)
+            const response = await fetch(`http://localhost:5000/api/projects/${projectId}/vote`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${localStorage.getItem("token")}`, // Include the token if you have it stored
+                },
+                body: JSON.stringify({ tokens: Number(amount), user }),
+            })
 
-            // For demo purposes, we'll simulate a successful purchase
-            // In a real application, you would call your API
-            await new Promise((resolve) => setTimeout(resolve, 1500))
+            if (!response.ok) {
+                const data = await response.json()
+                throw new Error(data.message || "Something went wrong")
+            }
+
+            const result = await response.json()
 
             toast({
-                title: "Purchase successful!",
-                description: `You have successfully purchased ${amount} tokens.`,
+                title: "Vote Successful!",
+                description: `You have voted for the project.`,
             })
 
             onOpenChange(false)
             onPurchaseComplete(Number(amount))
             setAmount("1")
-        } catch (error) {
-            console.error("Token purchase error:", error)
+        } catch (error: any) {
+            console.error("Vote project error:", error)
             toast({
-                title: "Purchase failed",
-                description: "There was an error processing your purchase. Please try again.",
+                title: "Vote failed",
+                description: error.message || "There was an error processing your vote. Please try again.",
                 variant: "destructive",
             })
         } finally {
@@ -85,6 +121,7 @@ export function TokenPurchaseModal({ open, onOpenChange, onPurchaseComplete }: T
                                 value={amount}
                                 onChange={(e) => setAmount(e.target.value)}
                                 placeholder="Enter amount"
+                                disabled={isSubmitting}
                                 className="col-span-3"
                             />
                             <p className="text-sm text-muted-foreground">
@@ -101,7 +138,7 @@ export function TokenPurchaseModal({ open, onOpenChange, onPurchaseComplete }: T
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                        <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
                             Cancel
                         </Button>
                         <Button type="submit" disabled={isSubmitting}>

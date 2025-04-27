@@ -217,11 +217,11 @@ export const deleteProject = async (req, res) => {
 // Vote on a project
 export const voteProject = async (req, res) => {
   try {
-    const { id } = req.params
-    const userId = req.user.id
-
+    const { projectId } = req.params.id
+    const userId = req.body.user.id
+    const tokens = req.body.tokens
     // Find project
-    const project = await Project.findByPk(id)
+    const project = await Project.findByPk(projectId)
     if (!project) {
       return res.status(404).json({ message: "Project not found" })
     }
@@ -231,7 +231,7 @@ export const voteProject = async (req, res) => {
     // 2. Create a vote record in a votes table
 
     // For this example, we'll just increment the votes count
-    await project.update({ votes: project.votes + 1 })
+    await project.update({ votes: project.votes + tokens })
 
     // Add points to user for voting (5 points)
     const user = await User.findByPk(userId)

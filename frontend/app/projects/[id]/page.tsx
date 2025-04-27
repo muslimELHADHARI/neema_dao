@@ -756,11 +756,15 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
       )}
 
       {/* Token Purchase Modal */}
-      <TokenPurchaseModal
-        open={tokenModalOpen}
-        onOpenChange={setTokenModalOpen}
-        onPurchaseComplete={handleTokenPurchase}
-      />
+      {project && (
+        <TokenPurchaseModal
+          projectId={project.id}
+          open={tokenModalOpen}
+          onOpenChange={setTokenModalOpen}
+          onPurchaseComplete={handleTokenPurchase}
+        />
+      )}
+
     </div>
   )
 }

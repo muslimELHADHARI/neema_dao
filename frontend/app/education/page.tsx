@@ -62,7 +62,7 @@ export default function EducationPage() {
               </div>
               <div className="relative h-[300px] rounded-lg overflow-hidden">
                 <Image
-                  src="/placeholder.svg?height=300&width=500"
+                  src="/sdg-target.jpg?height=300&width=500"
                   alt="Food waste reduction"
                   fill
                   className="object-cover"

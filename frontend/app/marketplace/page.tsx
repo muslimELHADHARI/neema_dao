@@ -21,7 +21,7 @@ const MOCK_LISTINGS: FoodListing[] = [
         sellerId: "seller1",
         sellerName: "Bakery Deluxe",
         location: "Tunis",
-        image: "/placeholder.svg?height=200&width=300",
+        image: "/fresh-bread.jpg?height=200&width=300",
         createdAt: new Date().toISOString(),
     },
     {
@@ -35,7 +35,7 @@ const MOCK_LISTINGS: FoodListing[] = [
         sellerId: "seller2",
         sellerName: "Green Garden Restaurant",
         location: "Sousse",
-        image: "/placeholder.svg?height=200&width=300",
+        image: "/unused-veg.jpg?height=200&width=300",
         createdAt: new Date().toISOString(),
     },
     {
@@ -49,7 +49,7 @@ const MOCK_LISTINGS: FoodListing[] = [
         sellerId: "seller3",
         sellerName: "Hotel Continental",
         location: "Sfax",
-        image: "/placeholder.svg?height=200&width=300",
+        image: "/dairy-prod.jpg?height=200&width=300",
         createdAt: new Date().toISOString(),
     },
 ]

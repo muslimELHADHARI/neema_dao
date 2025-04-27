@@ -34,7 +34,7 @@ export default function ProfilePage() {
     phoneNumber: string;
   };
 
-// Get the user from localStorage
+  // Get the user from localStorage
   const storedUser = localStorage.getItem('user');
 
   let user: User | null = null;
@@ -95,7 +95,7 @@ export default function ProfilePage() {
                 <div className="flex flex-col items-center sm:flex-row sm:items-start gap-6">
                   <div className="relative">
                     <Avatar className="h-24 w-24 border-2 border-emerald-200">
-                      <AvatarImage src="/placeholder.svg?height=96&width=96" alt="User" />
+                      <AvatarImage src="/profile_pic.svg?height=96&width=96" alt="User" />
                       <AvatarFallback className="text-lg">SA</AvatarFallback>
                     </Avatar>
                     {isEditing && (
@@ -109,7 +109,7 @@ export default function ProfilePage() {
                   </div>
                   <div className="space-y-2 text-center sm:text-left">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-xl font-semibold">{user?.firstName +" " + user?.lastName }</h3>
+                      <h3 className="text-xl font-semibold">{user?.firstName + " " + user?.lastName}</h3>
                       <Badge className="bg-emerald-100 text-emerald-800">Project Inventor</Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">Member since January {user?.createdAt.slice(0, 4)}</p>

@@ -49,7 +49,7 @@ export default function LandingPage() {
             </div>
             <div className="relative h-[400px] rounded-lg overflow-hidden shadow-xl">
               <Image
-                src="/placeholder.svg?height=800&width=600"
+                src="/poster_neema.jpg"
                 alt="Food waste reduction initiative"
                 fill
                 className="object-cover"
@@ -174,7 +174,7 @@ export default function LandingPage() {
             <Card className="overflow-hidden">
               <div className="relative h-48 w-full">
                 <Image
-                  src="/placeholder.svg?height=200&width=400"
+                  src="/project_1.jpg"
                   alt="Bread to Croutons Initiative"
                   fill
                   className="object-cover"
@@ -202,7 +202,7 @@ export default function LandingPage() {
             <Card className="overflow-hidden">
               <div className="relative h-48 w-full">
                 <Image
-                  src="/placeholder.svg?height=200&width=400"
+                  src="/project_2.jpg"
                   alt="Restaurant Food Donation App"
                   fill
                   className="object-cover"
@@ -232,7 +232,7 @@ export default function LandingPage() {
             <Card className="overflow-hidden">
               <div className="relative h-48 w-full">
                 <Image
-                  src="/placeholder.svg?height=200&width=400"
+                  src="/project_3.jpg"
                   alt="Compost System for Hotels"
                   fill
                   className="object-cover"
