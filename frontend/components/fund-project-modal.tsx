@@ -114,7 +114,7 @@ export function FundProjectModal({
 
             // Close the modal and update the UI
             onOpenChange(false)
-            onFundingComplete(fundingAmount)
+            //onFundingComplete(fundingAmount)
 
             // Reset form
             setAmount("")

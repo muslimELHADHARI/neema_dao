@@ -134,9 +134,14 @@ export default function ProjectsPage() {
   })
 
   // Parse tags string to array
-  const getTagsArray = (tagsString: string) => {
-    if (!tagsString) return []
-    return tagsString.split(",").map((tag) => tag.trim())
+  const getTagsArray = (tags: string) => {
+    if (Array.isArray(tags)) {
+      return tags;
+    } else if (typeof tags === "string") {
+      return tags.split(",");
+    } else {
+      return [];
+    }
   }
 
   return (
