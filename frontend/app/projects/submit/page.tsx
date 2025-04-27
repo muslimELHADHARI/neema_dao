@@ -1,4 +1,5 @@
 "use client"
+
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, Leaf } from "lucide-react"
 import Link from "next/link"
+import toast, { Toaster } from "react-hot-toast"
 
 export default function SubmitProjectPage() {
     const [formData, setFormData] = useState({
@@ -25,7 +27,6 @@ export default function SubmitProjectPage() {
         team: "",
     })
     const [isSubmitting, setIsSubmitting] = useState(false)
-    const [error, setError] = useState<string | null>(null)
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value })
@@ -34,18 +35,19 @@ export default function SubmitProjectPage() {
     const handleSelectChange = (name: string, value: string) => {
         setFormData({ ...formData, [name]: value })
     }
-    const userToken =localStorage.getItem("token");
+
+    const userToken = localStorage.getItem("token")
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setIsSubmitting(true)
-        setError(null)
 
         try {
             const response = await fetch("http://localhost:5000/api/projects", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "authorization":userToken
+                    ...(userToken && { authorization: userToken }),
                 },
                 body: JSON.stringify(formData),
             })
@@ -55,11 +57,39 @@ export default function SubmitProjectPage() {
             }
 
             const data = await response.json()
-            console.log("Project submitted successfully:", data)
-            // You can add redirection or other actions here if needed
+            toast.success("Project submitted successfully!", {
+                style: {
+                    background: "#059669",
+                    color: "#ffffff",
+                    borderRadius: "8px",
+                    padding: "12px",
+                },
+            })
+            // Reset form
+            setFormData({
+                title: "",
+                description: "",
+                longDescription: "",
+                category: "",
+                fundingGoal: "",
+                wasteReduction: "",
+                location: "",
+                image: "",
+                gallery: "",
+                tags: "",
+                timeline: "",
+                team: "",
+            })
         } catch (err) {
             console.error("Error submitting project:", err)
-            setError("Something went wrong. Please try again later.")
+            toast.error("Something went wrong. Please try again later.", {
+                style: {
+                    background: "#dc2626",
+                    color: "#ffffff",
+                    borderRadius: "8px",
+                    padding: "12px",
+                },
+            })
         } finally {
             setIsSubmitting(false)
         }
@@ -67,6 +97,7 @@ export default function SubmitProjectPage() {
 
     return (
         <div className="container mx-auto py-8 px-4 md:px-6">
+            <Toaster position="top-right" toastOptions={{ duration: 5000 }} />
             <div className="max-w-3xl mx-auto">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8">
@@ -275,9 +306,6 @@ export default function SubmitProjectPage() {
                         </Button>
                     </CardFooter>
                 </Card>
-
-                {/* Error Message */}
-                {error && <div className="mt-4 text-red-600">{error}</div>}
             </div>
         </div>
     )

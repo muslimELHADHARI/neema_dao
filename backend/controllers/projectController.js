@@ -109,7 +109,7 @@ export const createProject = async (req, res) => {
       tags,
       timeline,
       team,
-      status: "draft", // Default to draft
+      status: "active", // Default to draft
     })
 
     // Add points to user for creating a project (20 points)
@@ -268,7 +268,7 @@ export const fundProject = async (req, res) => {
 
     // Update project status if fully funded
     let newStatus = project.status
-    if (newFundingRaised >= project.fundingGoal && project.status === "active") {
+    if (newFundingRaised >= project.fundingGoal && project.status === "draft") {
       newStatus = "funded"
     }
 

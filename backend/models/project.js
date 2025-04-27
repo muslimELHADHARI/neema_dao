@@ -49,7 +49,7 @@ const Project = sequelize.define("Project", {
   },
   status: {
     type: DataTypes.ENUM("draft", "active", "funded", "completed", "cancelled"),
-    defaultValue: "draft",
+    defaultValue: "active",
   },
   wasteReduction: {
     type: DataTypes.STRING,
